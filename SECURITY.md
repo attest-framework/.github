@@ -25,8 +25,9 @@ Do **not** open a public GitHub issue for security vulnerabilities.
 
 This policy covers all repositories in the `attest-framework` GitHub organization:
 
-- [attest](https://github.com/attest-framework/attest) — engine and SDK
-- [attest-examples](https://github.com/attest-framework/attest-examples) — example code and benchmarks
+- [attest](https://github.com/attest-framework/attest) — Go engine, Python SDK, TypeScript SDK
+- [attest-examples](https://github.com/attest-framework/attest-examples) — example code
+- [attest-website](https://github.com/attest-framework/attest-website) — documentation site
 
 ## Supported Versions
 
