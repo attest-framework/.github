@@ -24,8 +24,8 @@ Layer 1  Schema         ── JSON Schema validation           ── free
 Layer 2  Constraint     ── cost, latency, token budgets     ── free
 Layer 3  Trace          ── tool ordering, required steps    ── free
 Layer 4  Content        ── regex, keywords, substring       ── free
-Layer 5  Embedding      ── semantic similarity              ── ~$0.0001/assertion
-Layer 6  LLM Judge      ── rubric-based evaluation          ── ~$0.01/assertion
+Layer 5  Embedding      ── semantic similarity              ── ~$0.001/call
+Layer 6  LLM Judge      ── rubric-based evaluation          ── ~$0.01+/call
 Layer 7  Trace Tree     ── multi-agent delegation tracking  ── free
 Layer 8  Plugin         ── custom evaluation logic          ── free
 ```
@@ -167,8 +167,8 @@ npx vitest
 | **Constraint** | `.cost_under(0.01)` `.latency_under(5000)` `.tokens_under(500)` | `.costUnder(0.01)` `.latencyUnder(5000)` `.tokensUnder(500)` | Free |
 | **Trace** | `.tools_called_in_order([...])` `.required_tools([...])` `.forbidden_tools([...])` | `.toolsCalledInOrder([...])` `.requiredTools([...])` `.forbiddenTools([...])` | Free |
 | **Content** | `.output_contains("x")` `.output_matches_regex(r"...")` `.output_has_all_keywords([...])` | `.outputContains("x")` `.outputMatchesRegex(/.../)`  `.outputHasAllKeywords([...])` | Free |
-| **Embedding** | `.output_similar_to("ref", threshold=0.8)` | `.outputSimilarTo("ref", { threshold: 0.8 })` | ~$0.0001 |
-| **Judge** | `.passes_judge("criteria", threshold=0.8)` | `.passesJudge("criteria", { threshold: 0.8 })` | ~$0.01 |
+| **Embedding** | `.output_similar_to("ref", threshold=0.8)` | `.outputSimilarTo("ref", { threshold: 0.8 })` | ~$0.001 |
+| **Judge** | `.passes_judge("criteria", threshold=0.8)` | `.passesJudge("criteria", { threshold: 0.8 })` | ~$0.01+ |
 | **Trace Tree** | `.agent_called("id")` `.delegation_depth(3)` `.aggregate_cost_under(0.05)` | `.agentCalled("id")` `.delegationDepth(3)` `.aggregateCostUnder(0.05)` | Free |
 
 ---
