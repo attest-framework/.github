@@ -60,7 +60,7 @@ Layers 1–4, 7–8 are deterministic and free. Use layers 5–6 only when you n
 
 ```bash
 uv init --bare my-agent-tests && cd my-agent-tests   # skip when you already have a project
-uv add "attest-ai>=1.0.0rc1" pytest
+uv add "attest-ai>=1.0.0" pytest
 ```
 
 ```python
@@ -109,7 +109,7 @@ uv run pytest -v
 ## Get Started — TypeScript
 
 ```bash
-npm install -D "@attest-ai/core@>=1.0.0-rc.1" "@attest-ai/vitest@>=1.0.0-rc.1" "vitest@^4"
+npm install -D "@attest-ai/core@>=1.0.0" "@attest-ai/vitest@>=1.0.0" "vitest@^4"
 ```
 
 ```typescript
