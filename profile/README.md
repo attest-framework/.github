@@ -9,6 +9,10 @@
 
 ---
 
+**Turn a real run or incident into a verified fixture, replay it in pull-request CI with zero model calls, and gate the merge on pass / fail / not evaluated (with the reason).** `attest capture` records the run; PR CI replays your agent's real code against it and sends the result to a policy gate, in Python and TypeScript. An outage of a judge or provider is reported as *not evaluated*, never as green. [Refund Desk](https://github.com/attest-framework/refund-desk) walks the whole path end to end on one synthetic double-refund incident (INC-1042): incident, trace check, capture, failing replay, merged fix, blocked regression, outage, mutation score, drafted contract, viewer.
+
+---
+
 Attest is an open-source testing framework for AI agents. It provides an **8-layer assertion pipeline** — deterministic checks first, LLM-as-judge only when necessary — delivering fast, reliable, cost-effective test suites for any agent framework.
 
 ### The Problem
@@ -36,7 +40,7 @@ Layers 1–4, 7–8 are deterministic and free. Use layers 5–6 only when you n
 
 ### Key Features
 
-**Framework agnostic** — 11 adapters: OpenAI, Anthropic, Gemini, Ollama, LangChain, LlamaIndex, Google ADK, CrewAI, OpenTelemetry, and manual instrumentation.
+**Framework agnostic** — 10 adapters: OpenAI, Anthropic, Gemini, Ollama, LangChain, LlamaIndex, Google ADK, CrewAI, OpenTelemetry, and manual instrumentation.
 
 **Fluent assertion DSL** — chain assertions naturally across all 8 layers in a single expression.
 
@@ -55,7 +59,8 @@ Layers 1–4, 7–8 are deterministic and free. Use layers 5–6 only when you n
 ## Get Started — Python
 
 ```bash
-pip install attest-ai
+uv init --bare my-agent-tests && cd my-agent-tests   # skip when you already have a project
+uv add "attest-ai>=1.0.0rc1" pytest
 ```
 
 ```python
@@ -98,13 +103,13 @@ def test_support_bot(attest):
 ```
 
 ```bash
-pytest -v
+uv run pytest -v
 ```
 
 ## Get Started — TypeScript
 
 ```bash
-npm install @attest-ai/core @attest-ai/vitest
+npm install -D "@attest-ai/core@>=1.0.0-rc.1" "@attest-ai/vitest@>=1.0.0-rc.1" "vitest@^4"
 ```
 
 ```typescript
@@ -183,7 +188,7 @@ Drop-in tracing for your existing agent framework — no code changes to your ag
 | Anthropic | `AnthropicAdapter` | `AnthropicAdapter` |
 | Google Gemini | `GeminiAdapter` | `GeminiAdapter` |
 | Ollama | `OllamaAdapter` | `OllamaAdapter` |
-| LangChain | `LangChainAdapter` | — |
+| LangChain | `LangChainAdapter` | `LangChainAdapter` |
 | LlamaIndex | `LlamaIndexInstrumentationHandler` | — |
 | Google ADK | `GoogleADKAdapter` | — |
 | CrewAI | `CrewAIAdapter` | — |
@@ -197,12 +202,13 @@ Drop-in tracing for your existing agent framework — no code changes to your ag
 | Repository | Description |
 |------------|-------------|
 | [`attest`](https://github.com/attest-framework/attest) | Core framework — Go engine, Python SDK, TypeScript SDK, pytest + Vitest plugins |
-| [`attest-examples`](https://github.com/attest-framework/attest-examples) | 14 working examples — quickstart, adapters, simulation, multi-agent, production patterns |
-| [`attest-website`](https://github.com/attest-framework/attest-website) | Documentation site — guides, API reference, architecture docs |
+| [`attest-examples`](https://github.com/attest-framework/attest-examples) | 25 small, copyable examples — one per feature or framework, in Python and TypeScript |
+| [`refund-desk`](https://github.com/attest-framework/refund-desk) | The end-to-end demo: one incident from first report to a merge gate that blocks its regression |
+| [`attest-framework.github.io`](https://github.com/attest-framework/attest-framework.github.io) | Source of the documentation site at [attest-framework.github.io](https://attest-framework.github.io/) — guides, API reference, architecture docs |
 
 ---
 
 <p align="center">
-  <a href="https://attest-framework.github.io/attest-website/">Documentation</a> · <a href="https://github.com/attest-framework/attest-examples">Examples</a> · <a href="https://pypi.org/project/attest-ai/">PyPI</a> · <a href="https://www.npmjs.com/package/@attest-ai/core">npm</a>
+  <a href="https://attest-framework.github.io/">Documentation</a> · <a href="https://github.com/attest-framework/attest-examples">Examples</a> · <a href="https://pypi.org/project/attest-ai/">PyPI</a> · <a href="https://www.npmjs.com/package/@attest-ai/core">npm</a>
 </p>
 <p align="center">Apache-2.0 License</p>
