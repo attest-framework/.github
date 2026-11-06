@@ -13,7 +13,7 @@
 
 ---
 
-Attest is an open-source testing framework for AI agents. It provides an **8-layer assertion pipeline** — deterministic checks first, LLM-as-judge only when necessary — delivering fast, reliable, cost-effective test suites for any agent framework.
+Attest is an open-source testing framework for AI agents. It provides **six evaluated assertion layers plus plugins** — deterministic checks first, LLM-as-judge only when necessary — delivering fast, reliable, cost-effective test suites for any agent framework.
 
 ### The Problem
 
@@ -23,26 +23,27 @@ AI agent testing today is either manual spot-checking or expensive LLM-as-judge 
 
 Attest introduces **graduated assertions**: validate schema for free, check constraints for free, verify trace structure for free — and only call an LLM judge when cheaper layers can't prove your point.
 
-```
-Layer 1  Schema         ── JSON Schema validation           ── free
-Layer 2  Constraint     ── cost, latency, token budgets     ── free
-Layer 3  Trace          ── tool ordering, required steps    ── free
-Layer 4  Content        ── regex, keywords, substring       ── free
-Layer 5  Embedding      ── semantic similarity              ── ~$0.001/call
-Layer 6  LLM Judge      ── rubric-based evaluation          ── ~$0.01+/call
-Layer 7  Trace Tree     ── multi-agent delegation tracking  ── free
-Layer 8  Plugin         ── custom evaluation logic          ── free
-```
+<!-- claims:layers:start -->
+| Layer | Checks | Assertion types | Cost |
+|-------|--------|-----------------|------|
+| L1 Schema validation | Checks the output against a JSON Schema. | `schema` | Free |
+| L2 Constraint checks | Checks cost, token, latency and step-count limits. | `constraint` | Free |
+| L3 Trace and behavioral checks | Checks which tools ran, in which order, with which arguments, how often per business key, across the agent tree and against the world's final state. | `trace`, `trace_tree`, `effect` | Free |
+| L4 Content pattern matching | Checks the output text against substrings, patterns and keywords. | `content` | Free |
+| L5 Embedding similarity | Scores semantic similarity against a reference with an embedding model: OpenAI embeddings are paid, the local ONNX model is free. | `embedding` | Depends on provider |
+| L6 LLM-as-judge | Scores the output against a rubric with a judge model: OpenAI, Anthropic and Gemini judges are paid, a local ACP agent or an OpenAI-compatible local endpoint is not. | `llm_judge` | Depends on provider |
+| Plugins | Custom assertions that run in the SDK process; cost and determinism are the plugin's. | `plugin` | Plugin-defined |
+<!-- claims:layers:end -->
 
-Layers 1–4, 7–8 are deterministic and free. Use layers 5–6 only when you need semantic understanding.
+L1–L4 are deterministic and free. L5–L6 depend on the provider you configure: use them only when you need semantic understanding.
 
 ---
 
 ### Key Features
 
-**Framework agnostic** — 10 adapters: OpenAI, Anthropic, Gemini, Ollama, LangChain, LlamaIndex, Google ADK, CrewAI, OpenTelemetry, and manual instrumentation.
+**Framework agnostic** — adapters for OpenAI, Anthropic, Gemini, Ollama, LangChain, CrewAI, OpenTelemetry, Google ADK, LlamaIndex, and manual instrumentation; see [Adapters](#adapters) for per-SDK maturity.
 
-**Fluent assertion DSL** — chain assertions naturally across all 8 layers in a single expression.
+**Fluent assertion DSL** — chain assertions naturally across the evaluated layers in a single expression.
 
 **Native test integration** — pytest plugin (Python) and Vitest plugin (TypeScript). No new test runner to learn.
 
@@ -170,11 +171,10 @@ npx vitest
 |-------|--------|------------|------|
 | **Schema** | `.output_matches_schema(schema)` | `.outputMatchesSchema(schema)` | Free |
 | **Constraint** | `.cost_under(0.01)` `.latency_under(5000)` `.tokens_under(500)` | `.costUnder(0.01)` `.latencyUnder(5000)` `.tokensUnder(500)` | Free |
-| **Trace** | `.tools_called_in_order([...])` `.required_tools([...])` `.forbidden_tools([...])` | `.toolsCalledInOrder([...])` `.requiredTools([...])` `.forbiddenTools([...])` | Free |
+| **Trace** | `.tools_called_in_order([...])` `.required_tools([...])` `.forbidden_tools([...])` `.agent_called("id")` `.delegation_depth(3)` `.aggregate_cost_under(0.05)` | `.toolsCalledInOrder([...])` `.requiredTools([...])` `.forbiddenTools([...])` `.agentCalled("id")` `.delegationDepth(3)` `.aggregateCostUnder(0.05)` | Free |
 | **Content** | `.output_contains("x")` `.output_matches_regex(r"...")` `.output_has_all_keywords([...])` | `.outputContains("x")` `.outputMatchesRegex(/.../)`  `.outputHasAllKeywords([...])` | Free |
-| **Embedding** | `.output_similar_to("ref", threshold=0.8)` | `.outputSimilarTo("ref", { threshold: 0.8 })` | ~$0.001 |
-| **Judge** | `.passes_judge("criteria", threshold=0.8)` | `.passesJudge("criteria", { threshold: 0.8 })` | ~$0.01+ |
-| **Trace Tree** | `.agent_called("id")` `.delegation_depth(3)` `.aggregate_cost_under(0.05)` | `.agentCalled("id")` `.delegationDepth(3)` `.aggregateCostUnder(0.05)` | Free |
+| **Embedding** | `.output_similar_to("ref", threshold=0.8)` | `.outputSimilarTo("ref", { threshold: 0.8 })` | Depends on provider |
+| **Judge** | `.passes_judge("criteria", threshold=0.8)` | `.passesJudge("criteria", { threshold: 0.8 })` | Depends on provider |
 
 ---
 
@@ -182,18 +182,24 @@ npx vitest
 
 Drop-in tracing for your existing agent framework — no code changes to your agent logic.
 
+<!-- claims:adapters:start -->
 | Adapter | Python | TypeScript |
-|---------|--------|------------|
-| OpenAI | `OpenAIAdapter` | `OpenAIAdapter` |
-| Anthropic | `AnthropicAdapter` | `AnthropicAdapter` |
-| Google Gemini | `GeminiAdapter` | `GeminiAdapter` |
-| Ollama | `OllamaAdapter` | `OllamaAdapter` |
-| LangChain | `LangChainAdapter` | `LangChainAdapter` |
-| LlamaIndex | `LlamaIndexInstrumentationHandler` | — |
-| Google ADK | `GoogleADKAdapter` | — |
-| CrewAI | `CrewAIAdapter` | — |
-| OpenTelemetry | `OTelAdapter` | `OTelAdapter` |
-| Manual | `ManualAdapter` | `ManualAdapter` |
+|---------|-------------|-------------|
+| OpenAI | stable | stable |
+| Anthropic | stable | stable |
+| Manual | stable | stable |
+| Gemini | beta | beta |
+| Ollama | beta | beta |
+| LangChain | beta | beta |
+| CrewAI | beta | — |
+| OpenTelemetry | beta | beta |
+| Google ADK | experimental | — |
+| LlamaIndex | experimental | — |
+
+- **beta**: Shipped and tested, but the interface or behavior can still change in a minor release.
+- **experimental**: Shipped without a stability commitment and without demonstrated demand; it can change or be removed in any release.
+- **stable**: Covered by the parity and conformance suites; a change in behavior is a breaking change.
+<!-- claims:adapters:end -->
 
 ---
 
