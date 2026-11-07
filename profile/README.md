@@ -61,8 +61,10 @@ L1–L4 are deterministic and free. L5–L6 depend on the provider you configure
 
 ```bash
 uv init --bare my-agent-tests && cd my-agent-tests   # skip when you already have a project
-uv add "attest-ai>=1.0.0" pytest
+uv add attest-ai==1.1.0rc5 pytest
 ```
+Save the following as `test_support_bot.py`. The recorded calls are sample data; no model or payment API is called.
+
 
 ```python
 from attest import agent, expect, TraceBuilder
@@ -80,7 +82,10 @@ def support_bot(builder: TraceBuilder, query: str) -> dict:
         result={"refund_id": "RFD-001", "status": "processed"},
     )
     builder.set_metadata(total_tokens=150, cost_usd=0.005, latency_ms=800)
-    return {"message": "Refund processed", "refund_id": "RFD-001"}
+    return {
+        "message": "Refund processed",
+        "structured": {"refund_id": "RFD-001"},
+    }
 
 
 def test_support_bot(attest):
@@ -110,37 +115,35 @@ uv run pytest -v
 ## Get Started — TypeScript
 
 ```bash
-npm install -D "@attest-ai/core@>=1.0.0" "@attest-ai/vitest@>=1.0.0" "vitest@^4"
+pnpm add -D @attest-ai/core@1.1.0-rc.5 @attest-ai/vitest@1.1.0-rc.5 vitest
 ```
+Save the following as `support-bot.test.ts`. The recorded calls are sample data; no model or payment API is called.
+
 
 ```typescript
-import { agent, attestExpect, TraceBuilder, Agent } from "@attest-ai/core";
-import { useAttest, evaluate } from "@attest-ai/vitest";
+import { agent, attestExpect } from "@attest-ai/core";
+import { evaluate } from "@attest-ai/vitest";
 import { describe, it } from "vitest";
 
-@agent("support-bot")
-class SupportBot implements Agent {
-  async invoke(builder: TraceBuilder, query: string) {
-    builder.addLlmCall({
-      name: "gpt-4",
+const supportBot = agent("support-bot", (builder, { query }) => {
+    builder.addLlmCall("gpt-4", {
       args: { messages: [{ role: "user", content: query }] },
       result: { response: "Your refund has been processed." },
     });
-    builder.addToolCall({
-      name: "process_refund",
+    builder.addToolCall("process_refund", {
       args: { order_id: "ORD-123" },
       result: { refund_id: "RFD-001", status: "processed" },
     });
     builder.setMetadata({ total_tokens: 150, cost_usd: 0.005, latency_ms: 800 });
-    return { message: "Refund processed", refund_id: "RFD-001" };
-  }
-}
+    return {
+      message: "Refund processed",
+      structured: { refund_id: "RFD-001" },
+    };
+});
 
 describe("support bot", () => {
-  it("processes refunds within budget", async (ctx) => {
-    const attest = useAttest(ctx);
-    const bot = new SupportBot();
-    const result = await bot.invoke("Refund order ORD-123");
+  it("processes refunds within budget", async () => {
+    const result = supportBot({ query: "Refund order ORD-123" });
 
     const chain = attestExpect(result)
       .outputMatchesSchema({
@@ -154,13 +157,13 @@ describe("support bot", () => {
       .forbiddenTools(["delete_account"])
       .outputContains("processed");
 
-    await evaluate(chain, attest);
+    await evaluate(chain);
   });
 });
 ```
 
 ```bash
-npx vitest
+pnpm exec vitest run
 ```
 
 ---
