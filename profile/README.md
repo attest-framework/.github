@@ -9,15 +9,15 @@
 
 ---
 
-**Turn a real run or incident into a verified fixture, replay it in pull-request CI with zero model calls, and gate the merge on pass / fail / not evaluated (with the reason).** `attest capture` records the run; PR CI replays your agent's real code against it and sends the result to a policy gate, in Python and TypeScript. An outage of a judge or provider is reported as *not evaluated*, never as green. [Refund Desk](https://github.com/attest-framework/refund-desk) walks the whole path end to end on one synthetic double-refund incident (INC-1042): incident, trace check, capture, failing replay, merged fix, blocked regression, outage, mutation score, drafted contract, viewer.
+**Record an incident, replay the agent's real code against its model recording, and apply a merge policy to the results.** In Python and TypeScript, `attest capture` records the run, applies redaction and drafts contracts. “Consistent with the recording” describes a fixture check, not proof of correct behavior: review the fixture and choose independent business invariants. Strict replay makes zero live model calls for matching requests; it removes live-model variability, not other sources of flaky tests. Checks report *pass*, *fail* or *not evaluated* with a reason. A missing judge verdict is *not evaluated*; it warns by default unless the policy blocks it. Requiring a blocking policy check in branch protection gates the covered regressions and removals, not every possible defect. [Refund Desk](https://github.com/attest-framework/refund-desk) demonstrates this with two synthetic incidents: INC-1042 (double refund after a timeout) and INC-1077 (over-refund and a confirmation sent to another customer).
 
 ---
 
-Attest is an open-source testing framework for AI agents. It provides **six evaluated assertion layers plus plugins** — deterministic checks first, LLM-as-judge only when necessary — delivering fast, reliable, cost-effective test suites for any agent framework.
+Attest is an open-source testing framework for AI agents. It provides **six evaluated assertion layers plus plugins**, with deterministic checks before model-based evaluation. Supported adapters and their maturity tiers are listed below.
 
 ### The Problem
 
-AI agent testing today is either manual spot-checking or expensive LLM-as-judge on every assertion. Most teams default to `assert "keyword" in response` and hope for the best.
+A reply can look correct even when an agent makes the wrong tool call or changes the wrong record. Tests can check the reply, the execution trace and the resulting state; a model judge can assess subjective criteria.
 
 ### The Solution
 
@@ -61,7 +61,7 @@ L1–L4 are deterministic and free. L5–L6 depend on the provider you configure
 
 ```bash
 uv init --bare my-agent-tests && cd my-agent-tests   # skip when you already have a project
-uv add attest-ai==1.1.0rc5 pytest
+uv add attest-ai==1.1.0 pytest
 ```
 Save the following as `test_support_bot.py`. The recorded calls are sample data; no model or payment API is called.
 
@@ -115,7 +115,7 @@ uv run pytest -v
 ## Get Started — TypeScript
 
 ```bash
-pnpm add -D @attest-ai/core@1.1.0-rc.5 @attest-ai/vitest@1.1.0-rc.5 vitest
+pnpm add -D @attest-ai/core@1.1.0 @attest-ai/vitest@1.1.0 vitest
 ```
 Save the following as `support-bot.test.ts`. The recorded calls are sample data; no model or payment API is called.
 
@@ -211,8 +211,8 @@ Drop-in tracing for your existing agent framework — no code changes to your ag
 | Repository | Description |
 |------------|-------------|
 | [`attest`](https://github.com/attest-framework/attest) | Core framework — Go engine, Python SDK, TypeScript SDK, pytest + Vitest plugins |
-| [`attest-examples`](https://github.com/attest-framework/attest-examples) | 25 small, copyable examples — one per feature or framework, in Python and TypeScript |
-| [`refund-desk`](https://github.com/attest-framework/refund-desk) | The end-to-end demo: one incident from first report to a merge gate that blocks its regression |
+| [`attest-examples`](https://github.com/attest-framework/attest-examples) | 27 small, copyable examples — one per feature or framework, in Python and TypeScript |
+| [`refund-desk`](https://github.com/attest-framework/refund-desk) | Two synthetic incidents, from reproduction to regression and contract-removal gates |
 | [`attest-framework.github.io`](https://github.com/attest-framework/attest-framework.github.io) | Source of the documentation site at [attest-framework.github.io](https://attest-framework.github.io/) — guides, API reference, architecture docs |
 
 ---
