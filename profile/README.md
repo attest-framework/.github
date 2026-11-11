@@ -228,6 +228,7 @@ Drop-in tracing for your existing agent framework — no code changes to your ag
 | [`attest`](https://github.com/attest-framework/attest) | Core framework — Go engine, Python SDK, TypeScript SDK, pytest + Vitest plugins |
 | [`attest-examples`](https://github.com/attest-framework/attest-examples) | 27 small, copyable examples — one per feature or framework, in Python and TypeScript |
 | [`refund-desk`](https://github.com/attest-framework/refund-desk) | Two synthetic incidents, from reproduction to regression and contract-removal gates |
+| [`attest-bench`](https://github.com/attest-framework/attest-bench) | Benchmarks: engine protocol and codec performance, and a labeled fault corpus that measures how often each way of checking an agent run catches a faulty run |
 | [`attest-framework.github.io`](https://github.com/attest-framework/attest-framework.github.io) | Source of the documentation site at [attest-framework.github.io](https://attest-framework.github.io/) — guides, API reference, architecture docs |
 
 ---
