@@ -12,6 +12,7 @@ Community health files and organization profile for the [attest-framework](https
 
 | Repository | Description |
 |------------|-------------|
-| [`attest`](https://github.com/attest-framework/attest) | Core framework — Go engine, Python SDK (`attest-ai`), TypeScript SDK (`@attest-ai/core`), pytest + Vitest plugins |
-| [`attest-examples`](https://github.com/attest-framework/attest-examples) | 25 small, copyable examples — one per feature or framework, in Python and TypeScript |
+| [`attest`](https://github.com/attest-framework/attest) | Core framework — Go engine, Python SDK (`attest-ai`), TypeScript SDK (`@attest-ai/core`, `@attest-ai/vitest`), pytest + Vitest integrations |
+| [`attest-examples`](https://github.com/attest-framework/attest-examples) | 27 small, copyable examples — one per feature or framework, in Python and TypeScript |
+| [`refund-desk`](https://github.com/attest-framework/refund-desk) | End-to-end demo: two synthetic incidents taken from reproduction to a blocked regression |
 | [`attest-framework.github.io`](https://github.com/attest-framework/attest-framework.github.io) | Documentation site — [attest-framework.github.io](https://attest-framework.github.io/) |

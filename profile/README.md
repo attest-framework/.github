@@ -9,7 +9,15 @@
 
 ---
 
-**Record an incident, replay the agent's real code against its model recording, and apply a merge policy to the results.** In Python and TypeScript, `attest capture` records the run, applies redaction and drafts contracts. “Consistent with the recording” describes a fixture check, not proof of correct behavior: review the fixture and choose independent business invariants. Strict replay makes zero live model calls for matching requests; it removes live-model variability, not other sources of flaky tests. Checks report *pass*, *fail* or *not evaluated* with a reason. A missing judge verdict is *not evaluated*; it warns by default unless the policy blocks it. Requiring a blocking policy check in branch protection gates the covered regressions and removals, not every possible defect. [Refund Desk](https://github.com/attest-framework/refund-desk) demonstrates this with two synthetic incidents: INC-1042 (double refund after a timeout) and INC-1077 (over-refund and a confirmation sent to another customer).
+**Attest tests what an AI agent did, not only what it said.** It checks the agent's tool calls and the state it left behind, and it can turn a recorded run into a regression test that runs in CI without calling a model.
+
+In practice:
+
+1. `attest capture` runs your agent once, records its model calls and trace, removes secrets and drafts contracts such as "refund each order at most once" (Python and TypeScript).
+2. A replay test runs your agent's current code against that recording. Requests that match the recording make zero live model calls.
+3. Every check reports *pass*, *fail* or *not evaluated* with a reason, and a merge policy turns the report into a pass, block or warning on the pull request.
+
+What this does and does not prove: a capture shows the fixture is consistent with the recording, not that the behavior is correct, so review it and add the business rules you care about. Replay removes model variability, not every source of flaky tests. A missing judge verdict is *not evaluated* and only warns unless your policy blocks it. A required policy check blocks the regressions and removals your tests cover, not every possible defect. [Refund Desk](https://github.com/attest-framework/refund-desk) shows the whole flow on two synthetic incidents: INC-1042 (double refund after a timeout) and INC-1077 (over-refund and a confirmation sent to another customer).
 
 ---
 
@@ -41,19 +49,23 @@ L1–L4 are deterministic and free. L5–L6 depend on the provider you configure
 
 ### Key Features
 
-**Framework agnostic** — adapters for OpenAI, Anthropic, Gemini, Ollama, LangChain, CrewAI, OpenTelemetry, Google ADK, LlamaIndex, and manual instrumentation; see [Adapters](#adapters) for per-SDK maturity.
+**Capture, replay and merge gate** (stable) — record a real run, replay the agent's current code against it in CI, and gate merges with a policy and pull-request annotations.
 
-**Fluent assertion DSL** — chain assertions naturally across the evaluated layers in a single expression.
+**Behavior and effect contracts** (stable) — rules over what the agent did: tool order, calls per business key (`tool_cardinality`), and the final state of a simulated system, including relational checks such as "refunds never exceed the order amount".
 
-**Native test integration** — pytest plugin (Python) and Vitest plugin (TypeScript). No new test runner to learn.
+**Mutation testing** (beta) — `attest mutate` breaks a recorded run on purpose (drops, duplicates or reorders tool calls, changes arguments) and reports which changes your tests miss.
 
-**Multi-agent support** — trace trees, delegation depth tracking, cross-agent data flow assertions, aggregate cost budgets across agent networks.
+**Failure viewer** (beta) — `attest view` writes one offline HTML page with the failing step highlighted in the trace.
 
-**Cost as a first-class metric** — per-assertion cost tracking, budget limits, cost reports, tiered sampling strategies for CI.
+**MCP server and agent skills** (beta) — coding agents such as Claude Code, Cursor and Codex can check traces and draft contracts through a read-only, offline MCP server.
 
-**Simulation mode** — run full test suites with zero API calls during development. Mock tools, simulated personas, deterministic replay.
+**Framework agnostic** — adapters for OpenAI, Anthropic, Gemini, Ollama, LangChain, CrewAI, OpenTelemetry, Google ADK, LlamaIndex and manual instrumentation, plus capture through a framework's own OpenTelemetry export; see [Adapters](#adapters) for per-SDK maturity.
 
-**Go engine** — JSON-RPC 2.0 subprocess handles evaluation at native speed. The SDKs communicate via NDJSON over stdio.
+**Native test integration** — a pytest plugin (Python) and a Vitest integration (TypeScript, Vitest 3–5). No new test runner to learn.
+
+**Cost as a test metric** — assert on cost, tokens and latency, and cap what judges and paid embeddings may spend per session.
+
+**Go engine** — one engine evaluates for both SDKs over JSON-RPC 2.0 on stdio, so Python and TypeScript return the same verdicts.
 
 ---
 
@@ -163,8 +175,11 @@ describe("support bot", () => {
 ```
 
 ```bash
+pnpm exec attest doctor   # first run only: downloads and checks the engine
 pnpm exec vitest run
 ```
+
+`attest doctor` fetches the engine before the first test. Without it, a slow first download can exceed Vitest's 5-second timeout for the first test.
 
 ---
 
@@ -174,7 +189,7 @@ pnpm exec vitest run
 |-------|--------|------------|------|
 | **Schema** | `.output_matches_schema(schema)` | `.outputMatchesSchema(schema)` | Free |
 | **Constraint** | `.cost_under(0.01)` `.latency_under(5000)` `.tokens_under(500)` | `.costUnder(0.01)` `.latencyUnder(5000)` `.tokensUnder(500)` | Free |
-| **Trace** | `.tools_called_in_order([...])` `.required_tools([...])` `.forbidden_tools([...])` `.agent_called("id")` `.delegation_depth(3)` `.aggregate_cost_under(0.05)` | `.toolsCalledInOrder([...])` `.requiredTools([...])` `.forbiddenTools([...])` `.agentCalled("id")` `.delegationDepth(3)` `.aggregateCostUnder(0.05)` | Free |
+| **Trace** | `.tools_called_in_order([...])` `.required_tools([...])` `.forbidden_tools([...])` `.tool_cardinality("issue_refund", per="order_id", at_most=1)` `.agent_called("id")` `.delegation_depth(3)` `.aggregate_cost_under(0.05)` | `.toolsCalledInOrder([...])` `.requiredTools([...])` `.forbiddenTools([...])` `.toolCardinality("issue_refund", { per: "order_id", atMost: 1 })` `.agentCalled("id")` `.delegationDepth(3)` `.aggregateCostUnder(0.05)` | Free |
 | **Content** | `.output_contains("x")` `.output_matches_regex(r"...")` `.output_has_all_keywords([...])` | `.outputContains("x")` `.outputMatchesRegex(/.../)`  `.outputHasAllKeywords([...])` | Free |
 | **Embedding** | `.output_similar_to("ref", threshold=0.8)` | `.outputSimilarTo("ref", { threshold: 0.8 })` | Depends on provider |
 | **Judge** | `.passes_judge("criteria", threshold=0.8)` | `.passesJudge("criteria", { threshold: 0.8 })` | Depends on provider |
